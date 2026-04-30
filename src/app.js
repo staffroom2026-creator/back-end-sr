@@ -47,14 +47,14 @@ app.get('/health', (req, res) => {
 
 // Import Module Routes
 const authRoutes = require('./modules/auth/auth.routes');
+const teacherRoutes = require('./modules/teachers/teacher.routes');
 // const userRoutes = require('./modules/users/users.routes');
-// const teacherRoutes = require('./modules/teachers/teachers.routes');
-// const schoolRoutes = require('./modules/schools/schools.routes');
-// const jobRoutes = require('./modules/jobs/jobs.routes');
-// const applicationRoutes = require('./modules/applications/applications.routes');
-// const savedJobRoutes = require('./modules/savedJobs/savedJobs.routes');
-// const notificationRoutes = require('./modules/notifications/notifications.routes');
-// const adminRoutes = require('./modules/admin/admin.routes');
+const schoolRoutes = require('./modules/schools/school.routes');
+const jobRoutes = require('./modules/jobs/job.routes');
+const applicationRoutes = require('./modules/applications/application.routes');
+const savedJobRoutes = require('./modules/savedJobs/savedJobs.routes');
+const notificationRoutes = require('./modules/notifications/notifications.routes');
+const adminRoutes = require('./modules/admin/admin.routes');
 
 // Mount Routes
 const apiRouter = express.Router();
@@ -62,13 +62,13 @@ const apiRouter = express.Router();
 apiRouter.use('/auth', authRoutes);
 // apiRouter.use('/users', userRoutes);
 
-// apiRouter.use('/teachers', teacherRoutes);
-// apiRouter.use('/schools', schoolRoutes);
-// apiRouter.use('/jobs', jobRoutes);
-// apiRouter.use('/applications', applicationRoutes);
-// apiRouter.use('/saved-jobs', savedJobRoutes);
-// apiRouter.use('/notifications', notificationRoutes);
-// apiRouter.use('/admin', adminRoutes);
+apiRouter.use('/teachers', teacherRoutes);
+apiRouter.use('/schools', schoolRoutes);
+apiRouter.use('/jobs', jobRoutes);
+apiRouter.use('/applications', applicationRoutes);
+apiRouter.use('/saved-jobs', savedJobRoutes);
+apiRouter.use('/notifications', notificationRoutes);
+apiRouter.use('/admin', adminRoutes);
 
 app.use('/api', apiRouter);
 

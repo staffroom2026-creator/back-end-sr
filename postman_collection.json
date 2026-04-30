@@ -1,0 +1,66 @@
+{
+	"info": {
+		"_postman_id": "staffroom-backend-v1",
+		"name": "StaffRoom API",
+		"description": "Postman collection for StaffRoom Teaching Marketplace API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register Teacher",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"full_name\": \"Jane Teacher\",\n  \"email\": \"jane@staffroom.ng\",\n  \"phone\": \"08000000000\",\n  \"password\": \"password123\",\n  \"role\": \"teacher\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+					}
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"jane@staffroom.ng\",\n  \"password\": \"password123\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Jobs",
+			"item": [
+				{
+					"name": "Browse Jobs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/jobs?subject=Mathematics&state=Lagos",
+							"host": ["{{baseUrl}}"],
+							"path": ["jobs"],
+							"query": [
+								{ "key": "subject", "value": "Mathematics" },
+								{ "key": "state", "value": "Lagos" }
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{ "key": "baseUrl", "value": "http://localhost:5000/api", "type": "string" },
+		{ "key": "token", "value": "", "type": "string" }
+	]
+}

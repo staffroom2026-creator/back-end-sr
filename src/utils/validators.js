@@ -41,11 +41,18 @@ const resetPasswordSchema = Joi.object({
 
 const teacherProfileSchema = Joi.object({
     phone: Joi.string().max(20).allow('', null),
+    headline: Joi.string().max(255).allow('', null),
     bio: Joi.string().max(2000).allow('', null),
     skills: Joi.string().max(1000).allow('', null),
     experience_years: Joi.number().integer().min(0).max(50).allow(null),
+    years_of_experience: Joi.number().integer().min(0).max(50).allow(null),
     qualification: Joi.string().max(255).allow('', null),
-    location: Joi.string().max(255).allow('', null),
+    subjects: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string()).allow('', null),
+    preferred_location: Joi.string().max(255).allow('', null),
+    location: Joi.string().max(255).allow('', null), // fallback
+    expected_salary: Joi.string().max(100).allow('', null),
+    employment_type: Joi.string().valid('full-time', 'part-time', 'contract', 'temporary').allow('', null),
+    availability_status: Joi.string().valid('available', 'not_looking', 'interviewing', 'hired').allow('', null),
     trcn_number: Joi.string().max(50).allow('', null),
 });
 
