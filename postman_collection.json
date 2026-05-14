@@ -1,8 +1,8 @@
 {
 	"info": {
-		"_postman_id": "staffroom-backend-v1",
-		"name": "StaffRoom API",
-		"description": "Postman collection for StaffRoom Teaching Marketplace API",
+		"_postman_id": "staffroom-backend-v1-full",
+		"name": "StaffRoom API (Complete)",
+		"description": "Complete Postman collection for StaffRoom Teaching Marketplace API including all features and admin endpoints.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -10,7 +10,7 @@
 			"name": "Auth",
 			"item": [
 				{
-					"name": "Register Teacher",
+					"name": "Register User",
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -24,6 +24,18 @@
 				},
 				{
 					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if(jsonData.token) { pm.environment.set(\"token\", jsonData.token); }"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -55,12 +67,274 @@
 							]
 						}
 					}
+				},
+				{
+					"name": "Get Job by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/jobs/1", "host": ["{{baseUrl}}"], "path": ["jobs", "1"] }
+					}
+				},
+				{
+					"name": "Create Job",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Math Teacher\",\n  \"description\": \"Looking for a math teacher\",\n  \"role_type\": \"Mathematics Teacher\",\n  \"employment_type\": \"full-time\",\n  \"salary_range\": \"100k-150k\",\n  \"location\": \"Lagos\",\n  \"requirements\": \"BSc Mathematics\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/jobs", "host": ["{{baseUrl}}"], "path": ["jobs"] }
+					}
+				},
+				{
+					"name": "Update Job",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Senior Math Teacher\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/jobs/1", "host": ["{{baseUrl}}"], "path": ["jobs", "1"] }
+					}
+				},
+				{
+					"name": "Delete Job",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "DELETE",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/jobs/1", "host": ["{{baseUrl}}"], "path": ["jobs", "1"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Applications",
+			"item": [
+				{
+					"name": "Apply for Job",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cover_letter\": \"I am highly interested in this role.\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/applications/apply/1", "host": ["{{baseUrl}}"], "path": ["applications", "apply", "1"] }
+					}
+				},
+				{
+					"name": "My Applications",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/applications/my-applications", "host": ["{{baseUrl}}"], "path": ["applications", "my-applications"] }
+					}
+				},
+				{
+					"name": "Get Job Applications",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/applications/job/1", "host": ["{{baseUrl}}"], "path": ["applications", "job", "1"] }
+					}
+				},
+				{
+					"name": "Update Application Status",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"shortlisted\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/applications/1/status", "host": ["{{baseUrl}}"], "path": ["applications", "1", "status"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Profile",
+			"item": [
+				{
+					"name": "Get My Profile",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/profiles/me", "host": ["{{baseUrl}}"], "path": ["profiles", "me"] }
+					}
+				},
+				{
+					"name": "Update Teacher Profile",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"bio\": \"Passionate educator\",\n  \"skills\": \"Math, Science\",\n  \"experience_years\": 5,\n  \"location\": \"Lagos\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/profiles/teacher", "host": ["{{baseUrl}}"], "path": ["profiles", "teacher"] }
+					}
+				},
+				{
+					"name": "Update School Profile",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"address\": \"123 School Road\",\n  \"lga\": \"Ikeja\",\n  \"state\": \"Lagos\",\n  \"website\": \"https://myschool.com\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/profiles/school", "host": ["{{baseUrl}}"], "path": ["profiles", "school"] }
+					}
+				},
+				{
+					"name": "Upload CV",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "cv", "type": "file", "src": "" }
+							]
+						},
+						"url": { "raw": "{{baseUrl}}/profiles/upload-cv", "host": ["{{baseUrl}}"], "path": ["profiles", "upload-cv"] }
+					}
+				},
+				{
+					"name": "Upload Logo",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "logo", "type": "file", "src": "" }
+							]
+						},
+						"url": { "raw": "{{baseUrl}}/profiles/upload-logo", "host": ["{{baseUrl}}"], "path": ["profiles", "upload-logo"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Features",
+			"item": [
+				{
+					"name": "Save Job",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "POST",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/features/saved-jobs/1", "host": ["{{baseUrl}}"], "path": ["features", "saved-jobs", "1"] }
+					}
+				},
+				{
+					"name": "Get Saved Jobs",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/features/saved-jobs", "host": ["{{baseUrl}}"], "path": ["features", "saved-jobs"] }
+					}
+				},
+				{
+					"name": "Unsave Job",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "DELETE",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/features/saved-jobs/1", "host": ["{{baseUrl}}"], "path": ["features", "saved-jobs", "1"] }
+					}
+				},
+				{
+					"name": "Get Notifications",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/features/notifications", "host": ["{{baseUrl}}"], "path": ["features", "notifications"] }
+					}
+				},
+				{
+					"name": "Mark Notification Read",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "PATCH",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/features/notifications/1/read", "host": ["{{baseUrl}}"], "path": ["features", "notifications", "1", "read"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Get Stats",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/admin/stats", "host": ["{{baseUrl}}"], "path": ["admin", "stats"] }
+					}
+				},
+				{
+					"name": "Get Pending Verifications",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/admin/verifications", "host": ["{{baseUrl}}"], "path": ["admin", "verifications"] }
+					}
+				},
+				{
+					"name": "Verify School",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+						"method": "PATCH",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/admin/verifications/1", "host": ["{{baseUrl}}"], "path": ["admin", "verifications", "1"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Get Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "https://api.staffroomng.com/health", "protocol": "https", "host": ["api", "staffroomng", "com"], "path": ["health"] }
+					}
 				}
 			]
 		}
 	],
 	"variable": [
-		{ "key": "baseUrl", "value": "http://localhost:5000/api", "type": "string" },
-		{ "key": "token", "value": "", "type": "string" }
+		{ "key": "baseUrl", "value": "https://api.staffroomng.com/api", "type": "string" }
 	]
 }

@@ -25,7 +25,12 @@ const createSendToken = (user, statusCode, res) => {
 };
 
 exports.register = catchAsync(async (req, res, next) => {
-    const { name, email, password, role, schoolName, schoolType } = req.body;
+    const { name, full_name, email, phone, password, role, schoolName, schoolType } = req.body;
+    const finalName = name || full_name;
+
+    if (!finalName) {
+        return next(new AppError('Please provide a name', 400));
+    }
 
     // 1. Check if user already exists
     const existingUser = await User.findByEmail(email);
@@ -35,7 +40,7 @@ exports.register = catchAsync(async (req, res, next) => {
 
     // 2. Create user
     const userId = await User.create({
-        name,
+        name: finalName,
         email,
         password,
         role
@@ -43,7 +48,7 @@ exports.register = catchAsync(async (req, res, next) => {
 
     // 3. Create associated profile
     if (role === 'teacher') {
-        await User.createTeacherProfile(userId);
+        await User.createTeacherProfile(userId, { phone });
     } else if (role === 'school') {
         if (!schoolName || !schoolType) {
             return next(new AppError('School name and type are required for school accounts', 400));

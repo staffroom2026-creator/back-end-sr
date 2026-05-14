@@ -29,11 +29,20 @@ class User {
     }
 
     static async createTeacherProfile(userId, profileData = {}) {
-        const [result] = await db.execute(
-            'INSERT INTO teacher_profiles (user_id) VALUES (?)',
-            [userId]
-        );
-        return result.insertId;
+        const { phone } = profileData;
+        if (phone) {
+            const [result] = await db.execute(
+                'INSERT INTO teacher_profiles (user_id, phone) VALUES (?, ?)',
+                [userId, phone]
+            );
+            return result.insertId;
+        } else {
+            const [result] = await db.execute(
+                'INSERT INTO teacher_profiles (user_id) VALUES (?)',
+                [userId]
+            );
+            return result.insertId;
+        }
     }
 
     static async createSchoolProfile(userId, schoolName, schoolType) {
