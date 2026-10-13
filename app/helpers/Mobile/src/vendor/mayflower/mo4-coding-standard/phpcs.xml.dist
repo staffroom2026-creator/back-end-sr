@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<ruleset name="PHP_CodeSniffer">
+    <description>The coding standard for PHP_CodeSniffer itself, applied to MO4.</description>
+
+    <!-- Load sensible default configuration settings for coding standard checking of MO4. -->
+    <!-- These configuration settings can only be overridden by CLI! -->
+    <!-- The precedence order is: -->
+    <!--   1. CLI parameters -->
+    <!--   2. followed by configuration settings imported from rulesets, first come, first serve -->
+    <!--   3. and finally the configuration from this file itself! -->
+    <rule ref="phpcs.mo4.xml"/>
+
+    <rule ref="MO4/ruleset.xml"/>
+</ruleset>

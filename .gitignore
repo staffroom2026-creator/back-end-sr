@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+
+/uploads/**
+!/uploads/**/
+!/uploads/**/.gitkeep
+/public/uploads/**
+!/public/uploads/**/
+!/public/uploads/**/.gitkeep
+
+/error_log
+/public/error_log
+*.log

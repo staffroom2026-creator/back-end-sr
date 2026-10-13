@@ -1,0 +1,10 @@
+parameters:
+    level: max
+    bootstrapFiles:
+        - %rootDir%/../../../tests/bootstrap.php
+    paths:
+       - %rootDir%/../../../MO4
+       - %rootDir%/../../../tests
+    checkMissingIterableValueType: false
+includes:
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
