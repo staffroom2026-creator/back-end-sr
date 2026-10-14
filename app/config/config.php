@@ -17,7 +17,12 @@ if (!defined('URLROOT')) define('URLROOT', env('APP_URL', 'http://localhost/staf
 if (!defined('SITENAME')) define('SITENAME', 'StaffRoom API');
 
 // API Keys and Secrets
-if (!defined('JWT_SECRET_KEY')) define('JWT_SECRET_KEY', env('JWT_SECRET', 'staffroom_secret_key_2026_secure_mvc'));
+$jwtSecret = defined('JWT_SECRET_KEY') ? JWT_SECRET_KEY : env('JWT_SECRET');
+$appEnvironment = strtolower((string)env('APP_ENV', 'development'));
+if ($appEnvironment === 'production' && (!is_string($jwtSecret) || trim($jwtSecret) === '' || in_array(trim($jwtSecret), ['your_jwt_secret_key_here', 'staffroom_secret_key_2026_secure_mvc'], true))) {
+	throw new RuntimeException('A production JWT secret must be configured.');
+}
+if (!defined('JWT_SECRET_KEY')) define('JWT_SECRET_KEY', $jwtSecret ?: 'staffroom_secret_key_2026_secure_mvc');
 if (!defined('UPLOAD_CV_DIR')) define('UPLOAD_CV_DIR', dirname(dirname(APPROOT)) . '/public/uploads/cvs');
 if (!defined('UPLOAD_LOGO_DIR')) define('UPLOAD_LOGO_DIR', dirname(dirname(APPROOT)) . '/public/uploads/logos');
 

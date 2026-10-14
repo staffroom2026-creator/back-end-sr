@@ -51,7 +51,8 @@ class Core
                 '/contact',
                 '/internal-admin/invitations/accept'
             ];
-            if (!($method === 'POST' && in_array($normalizedPath, $publicAuthPaths, true))) {
+            $isPublicHealthCheck = $method === 'GET' && $normalizedPath === '/health';
+            if (!$isPublicHealthCheck && !($method === 'POST' && in_array($normalizedPath, $publicAuthPaths, true))) {
                 AuthMiddleware::authenticate();
             }
 

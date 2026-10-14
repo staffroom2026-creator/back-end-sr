@@ -259,7 +259,7 @@ class StreamWrapper
         $this->initProtocol($path);
 
         // Some paths come through as S3:// for some reason.
-        $split = explode('://', $path);
+        $split = explode('://', $path, 2);
         $path = strtolower($split[0]) . '://' . $split[1];
 
         // Check if this path is in the url_stat cache
@@ -401,7 +401,7 @@ class StreamWrapper
      *
      * @param string $path    The path to the directory
      *                        (e.g. "s3://dir[</prefix>]")
-     * @param string $options Unused option variable
+     * @param int    $options Unused option variable
      *
      * @return bool true on success
      * @see http://www.php.net/manual/en/function.opendir.php
@@ -703,7 +703,7 @@ class StreamWrapper
     private function getBucketKey($path)
     {
         // Remove the protocol
-        $parts = explode('://', $path);
+        $parts = explode('://', $path, 2);
         // Get the bucket, key
         $parts = explode('/', $parts[1], 2);
 

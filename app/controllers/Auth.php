@@ -289,12 +289,14 @@ class Auth extends Controller
 
         $data = $this->getData();
 
-        $email = trim($data['email'] ?? '');
-        $password = $data['password'] ?? '';
+        $email = $data['email'] ?? null;
+        $password = $data['password'] ?? null;
 
-        if (empty($email) || empty($password)) {
+        if (!is_string($email) || !is_string($password) || trim($email) === '' || $password === '') {
             ResponseHelper::error('Email and password are required', 400);
         }
+
+        $email = trim($email);
 
         $user = $this->userModel->findByEmail($email);
         if (!$user) {

@@ -12,7 +12,7 @@ return [
     'debug' => env('APP_ENV', 'development') === 'development',
     'url' => env('APP_URL', 'http://localhost/staffroom_api/public'),
     'api_prefix' => env('API_PREFIX', '/api'),
-    'jwt_secret' => env('JWT_SECRET', 'staffroom_secret_key_2026_secure_mvc'),
+    'jwt_secret' => env('JWT_SECRET'),
     'jwt_expiry' => (int)env('JWT_EXPIRES_IN', 2592000), // 30 days in seconds
     'uploads' => [
         'cv_dir' => dirname(__DIR__) . '/public/uploads/cvs',

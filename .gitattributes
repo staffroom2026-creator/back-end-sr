@@ -1,0 +1,3 @@
+app/helpers/phpMailer/extras/htmlfilter.php whitespace=cr-at-eol
+app/bootstrap.php whitespace=cr-at-eol
+app/helpers/vendor/** whitespace=-blank-at-eol

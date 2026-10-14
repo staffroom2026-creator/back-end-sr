@@ -14,7 +14,7 @@ try {
             'status' => false,
             'message' => 'Internal Server Error'
         ]);
-        exit;
+        exit(PHP_SAPI === 'cli' ? 1 : 0);
     });
 
     // Load Config

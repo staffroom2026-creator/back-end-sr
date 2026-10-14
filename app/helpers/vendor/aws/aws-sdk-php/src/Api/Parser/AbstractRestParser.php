@@ -39,6 +39,21 @@ abstract class AbstractRestParser extends AbstractParser
 
         if ($payload = $output['payload']) {
             $this->extractPayload($payload, $output, $response, $result);
+        } else {
+            $response = AbstractParser::getResponseWithCachingStream($response);
+
+            if ($response->getBody()->getSize() === null) {
+                $rawBody = AbstractParser::getBodyContents($response);
+                $isEmpty = empty($rawBody);
+            } else {
+                $isEmpty = $response->getBody()->getSize() === 0;
+            }
+
+            if (!$isEmpty && count($output->getMembers()) > 0
+            ) {
+                // if no payload was found, then parse the contents of the body
+                $this->payload($response, $output, $result);
+            }
         }
 
         foreach ($output->getMembers() as $name => $member) {
@@ -55,15 +70,6 @@ abstract class AbstractRestParser extends AbstractParser
             }
         }
 
-        $body = $response->getBody();
-        if (!$payload
-            && (!$body->isSeekable() || $body->getSize())
-            && count($output->getMembers()) > 0
-        ) {
-            // if no payload was found, then parse the contents of the body
-            $this->payload($response, $output, $result);
-        }
-
         return new Result($result);
     }
 
@@ -75,23 +81,36 @@ abstract class AbstractRestParser extends AbstractParser
     ) {
         $member = $output->getMember($payload);
         $body = $response->getBody();
-
         if (!empty($member['eventstream'])) {
             $result[$payload] = new EventParsingIterator(
                 $body,
                 $member,
                 $this
             );
-        } elseif ($member instanceof StructureShape) {
+
+            return;
+        }
+
+        $response = AbstractParser::getResponseWithCachingStream($response);
+
+        if ($member instanceof StructureShape) {
             //Unions must have at least one member set to a non-null value
             // If the body is empty, we can assume it is unset
-            if (!empty($member['union']) && ($body->isSeekable() && !$body->getSize())) {
+            if ($response->getBody()->getSize() === null) {
+                $rawBody = AbstractParser::getBodyContents($response);
+                $isEmpty = empty($rawBody);
+            } else {
+                $isEmpty = $response->getBody()->getSize() === 0;
+            }
+
+            if (!empty($member['union']) && $isEmpty) {
                 return;
             }
 
             $result[$payload] = [];
             $this->payload($response, $member, $result[$payload]);
-        } elseif (!$body->isSeekable() || $body->getSize()) {
+        } else {
+            // Always set the payload to the body stream, regardless of content
             $result[$payload] = $body;
         }
     }
@@ -107,7 +126,7 @@ abstract class AbstractRestParser extends AbstractParser
     ) {
         $value = $response->getHeaderLine($shape['locationName'] ?: $name);
         // Empty headers should not be deserialized
-        if (empty($value)) {
+        if ($value === null || $value === '') {
             return;
         }
 
@@ -120,6 +139,7 @@ abstract class AbstractRestParser extends AbstractParser
                 };
                 break;
             case 'long':
+            case 'integer':
                 $value = (int) $value;
                 break;
             case 'boolean':

@@ -1,0 +1,61 @@
+name: PHP CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: php-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: PHP 8.3 checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Install locked Composer dependencies
+        run: composer install --working-dir=app/helpers --no-interaction --prefer-dist --no-progress --no-dev
+
+      - name: Audit Composer dependencies
+        run: composer audit --working-dir=app/helpers
+
+      - name: Lint first-party PHP
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            find app/controllers app/models app/libraries app/middleware config routes tests -type f -name '*.php' -print0
+            find app/config -type f -name '*.php' -print0
+            find app/helpers -maxdepth 1 -type f -name '*.php' -print0
+            find app/helpers/phpMailer -type f -name '*.php' -print0
+            printf '%s\0' app/bootstrap.php public/index.php
+          } | while IFS= read -r -d '' file; do
+            php -l "$file"
+          done
+
+      - name: Run endpoint and auth regression tests
+        run: |
+          php tests/users_auth_regression_test.php
+          php tests/auth_login_response_test.php
+          php tests/jwt_secret_config_test.php
+          php tests/health_endpoint_test.php
+          php tests/contact_endpoint_test.php
+          php tests/internal_admin_endpoint_test.php

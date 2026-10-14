@@ -6,6 +6,16 @@ class Users extends Controller
   protected $userModel;
   protected $transactionModel;
 
+  protected function requirePinUser()
+  {
+    return AuthMiddleware::authenticate();
+  }
+
+  protected function hasNonEmptyPinValue($value)
+  {
+    return (is_string($value) || is_int($value)) && trim((string) $value) !== '';
+  }
+
   public function __construct()
   {
     $this->userModel = $this->model('User');
@@ -288,7 +298,7 @@ class Users extends Controller
       ];
       $JWT_token = $this->getMyJsonID($datatoken, $this->serverKey);
       $initData = [
-        'access_token' => $JWT_token
+        'access_token' => $JWT_token,
         'loginData' => $loginData,
         'userAccount' => $accountDetails,
       ];
@@ -503,95 +513,92 @@ class Users extends Controller
   }
 
 
-  public function setTransferPin()
-  {
-
-
+public function setTransferPin()
+{
     try {
-      $userData = $this->RouteProtecion();
+    $userData = $this->requirePinUser();
     } catch (UnexpectedValueException $e) {
-    } catch (UnexpectedValueException $e) {
-      ResponseHelper::error($e->getMessage(), 401);
-    }
+        ResponseHelper::error($e->getMessage(), 401);
+        return;
     }
 
     $user_id = $userData->user_id;
-    // $userDatax = $this->userModel->findUserByEmail_det2($userData->email);
-    // $accountDetails = $this->userModel->getAccountDetails($userDatax->account_id, $user_id);
-
     $sentData = $this->getData();
-    $pin = $sentData['transfer_pin'];
+    $pin = $sentData['transfer_pin'] ?? null;
 
-    if (isset($pin) && !empty($pin)) {
-      $pinn = password_hash($pin, PASSWORD_DEFAULT);
-
-
-      if ($this->userModel->setTransferPin($pinn, $user_id)) {
-        ResponseHelper::success('transfer pin set successfully');
-      } else {
-        ResponseHelper::error('failed to set transfer pin', 404);
-      }
-    } else {
-      ResponseHelper::error('invalid pin', 404);
+    if (!$this->hasNonEmptyPinValue($pin)) {
+        ResponseHelper::error('invalid pin', 404);
+        return;
     }
-  }
+
+    $pinn = password_hash((string) $pin, PASSWORD_DEFAULT);
+
+    if ($this->userModel->setTransferPin($pinn, $user_id)) {
+        ResponseHelper::success('transfer pin set successfully');
+    } else {
+        ResponseHelper::error('failed to set transfer pin', 404);
+    }
+}
+
   public function setLockPin()
   {
-
+    try {
+      $userData = $this->requirePinUser();
+    } catch (UnexpectedValueException $e) {
+      ResponseHelper::error($e->getMessage(), 401);
+      return;
+    }
 
     $sentData = $this->getData();
-    $userDatax = $this->userModel->findUserByEmail_det2($sentData['email']);
-    $accountDetails = $this->userModel->getAccountDetails($userDatax->account_id, $userDatax->user_id);
-    $pin = $sentData['pin'];
+    $pin = $sentData['pin'] ?? null;
 
-    if (isset($pin) && !empty($pin)) {
-      $pinn = password_hash($pin, PASSWORD_DEFAULT);
-
-
-      if ($this->userModel->setLockPin($pinn, $userDatax->user_id)) {
-        ResponseHelper::success('Lock pin set successfully');
-      } else {
-        ResponseHelper::error('failed to set transfer pin', 404);
-      }
-    } else {
+    if (!$this->hasNonEmptyPinValue($pin)) {
       ResponseHelper::error('invalid pin', 404);
+      return;
+    }
+
+    $user_id = $userData->user_id;
+    $pinn = password_hash((string) $pin, PASSWORD_DEFAULT);
+
+    if ($this->userModel->setLockPin($pinn, $user_id)) {
+      ResponseHelper::success('Lock pin set successfully');
+    } else {
+      ResponseHelper::error('failed to set lock pin', 404);
     }
   }
   public function verifyTransferPin()
   {
-
-
     try {
-      $userData = $this->RouteProtecion();
-    } catch (UnexpectedValueException $e) {
+      $userData = $this->requirePinUser();
     } catch (UnexpectedValueException $e) {
       ResponseHelper::error($e->getMessage(), 401);
-    }
+      return;
     }
 
     $user_id = $userData->user_id;
     $email = $userData->email;
-    $data['otp'] = $this->generateNineDigitValue();
+    $data['otp'] = (string) random_int(100000000, 999999999);
 
     $otp = password_hash($data['otp'], PASSWORD_DEFAULT);
 
-
-    if ($userData->transfer_pin == 0 || $userData->transfer_pin == "0") {
+    if (empty($userData->transfer_pin) || $userData->transfer_pin == "0") {
       ResponseHelper::error('Transfer pin not set', 404);
+      return;
     }
 
     $sentData = $this->getData();
-    $pin = $sentData['transfer_pin'];
+    $pin = $sentData['transfer_pin'] ?? null;
 
-    if (isset($pin) && !empty($pin)) {
-      if (password_verify($pin, $userData->transfer_pin)) {
-        $this->userModel->storeTransactionKey($otp, $user_id, $email);
-        ResponseHelper::success('Pin validated', ['secret_key' => $data['otp']]);
-      } else {
-        ResponseHelper::error('wrong pin', 404);
-      }
+    if (!$this->hasNonEmptyPinValue($pin)) {
+      ResponseHelper::error('invalid pin', 404);
+      return;
+    }
+
+    if (password_verify((string) $pin, (string) $userData->transfer_pin)) {
+      $this->userModel->storeTransactionKey($otp, $user_id, $email);
+      ResponseHelper::success('Pin validated', ['secret_key' => $data['otp']]);
     } else {
-        ResponseHelper::error('invalid pin', 404);
+      ResponseHelper::error('wrong pin', 404);
     }
   }
   public function forgetPassword()
@@ -686,9 +693,8 @@ class Users extends Controller
     try {
       $userData = $this->RouteProtecion();
     } catch (UnexpectedValueException $e) {
-    } catch (UnexpectedValueException $e) {
       ResponseHelper::error($e->getMessage(), 401);
-    }
+      return;
     }
 
 
@@ -700,6 +706,12 @@ class Users extends Controller
     $url = "https://v3.api.termii.com/api/sms/send";
     $senderID = "PAYKING";
     $senderIDazz = "" . $this->generateSixDigitValue() . "";
+    $termiiApiKey = env('TERMII_API_KEY', '');
+
+    if (!is_string($termiiApiKey) || trim($termiiApiKey) === '') {
+      ResponseHelper::error('Phone verification is not configured', 503);
+      return;
+    }
 
     $messageBody = '' . $senderIDazz . '.  Do not share it with anyone.
  
@@ -712,7 +724,7 @@ class Users extends Controller
       "channel" => "generic",
       "type" => "plain",
       "from" => "PayKing",
-      "api_key" => "TLfVkhvyxKRpMwoOcnGKlMoSsCKNJuNdTDcJAwMBirpZZKZuQfSiLIOAURisIn"
+      "api_key" => $termiiApiKey
     ]);
     $payload2 = array(
       "messageText" => $messageBody,
@@ -767,9 +779,10 @@ class Users extends Controller
   {
 
     try {
-      $userData = $this->RouteProtecion();
+      $userData = $this->requirePinUser();
     } catch (UnexpectedValueException $e) {
       ResponseHelper::error($e->getMessage(), 401);
+      return;
     }
 
     $sentData = $this->getData();
@@ -829,17 +842,11 @@ class Users extends Controller
 
   public function changeTransferPin()
   {
-
-
     try {
-      $userData = $this->RouteProtecion();
+      $userData = $this->requirePinUser();
     } catch (UnexpectedValueException $e) {
-      $res = [
-        'status' => 401,
-        'message' =>  $e->getMessage(),
-      ];
-      print_r(json_encode($res));
-      exit;
+      ResponseHelper::error($e->getMessage(), 401);
+      return;
     }
 
     $user_id = $userData->user_id;
@@ -847,25 +854,27 @@ class Users extends Controller
     $sentData = $this->getData();
 
     $data = [
-      'old_pin' => $sentData['old_pin'],
-      'new_pin' => $sentData['new_pin'],
-      'confirm_new_pin' => $sentData['confirm_new_pin'],
+      'old_pin' => $sentData['old_pin'] ?? null,
+      'new_pin' => $sentData['new_pin'] ?? null,
+      'confirm_new_pin' => $sentData['confirm_new_pin'] ?? null,
     ];
-    if ($userData->transfer_pin == 0 || $userData->transfer_pin == "0") {
+    foreach ($data as $value) {
+      if (!$this->hasNonEmptyPinValue($value)) {
+        ResponseHelper::error('incomplete pin data', 400);
+        return;
+      }
+    }
+    if (empty($userData->transfer_pin) || $userData->transfer_pin == "0") {
       ResponseHelper::error('Transfer pin not set', 404);
+      return;
     }
-    if ($data['new_pin'] != $data['confirm_new_pin']) {
-      $res = json_encode(array(
-        'status' => false,
-        'message' => 'pin does not match'
-      ));
-      http_response_code(404);
-      print_r($res);
-      exit;
+    if ((string) $data['new_pin'] !== (string) $data['confirm_new_pin']) {
+      ResponseHelper::error('pin does not match', 400);
+      return;
     }
-    if (password_verify($data['old_pin'], $userData->transfer_pin)) {
-      $data['new_pin'] = password_hash($data['new_pin'], PASSWORD_DEFAULT);
-      if ($this->userModel->setTransferPin($data['new_pin'], $user_id)) {
+    if (password_verify((string) $data['old_pin'], (string) $userData->transfer_pin)) {
+      $newPinHash = password_hash((string) $data['new_pin'], PASSWORD_DEFAULT);
+      if ($this->userModel->setTransferPin($newPinHash, $user_id)) {
         ResponseHelper::success('transfer pin set successfully');
       } else {
         ResponseHelper::error('failed to set transfer pin', 404);
@@ -877,37 +886,42 @@ class Users extends Controller
 
   public function changeLockPin()
   {
-
-
     try {
-      $userData = $this->RouteProtecion();
-    } catch (UnexpectedValueException $e) {
+      $userData = $this->requirePinUser();
     } catch (UnexpectedValueException $e) {
       ResponseHelper::error($e->getMessage(), 401);
-    }
+      return;
     }
 
     $user_id = $userData->user_id;
-
     $sentData = $this->getData();
 
     $data = [
-      'old_pin' => $sentData['old_pin'],
-      'new_pin' => $sentData['new_pin'],
-      'confirm_new_pin' => $sentData['confirm_new_pin'],
+      'old_pin' => $sentData['old_pin'] ?? null,
+      'new_pin' => $sentData['new_pin'] ?? null,
+      'confirm_new_pin' => $sentData['confirm_new_pin'] ?? null,
     ];
-    if ($userData->transfer_pin == 0 || $userData->transfer_pin == "0") {
-      ResponseHelper::error('Transfer pin not set', 404);
+
+    if (!$this->hasNonEmptyPinValue($data['old_pin']) || !$this->hasNonEmptyPinValue($data['new_pin']) || !$this->hasNonEmptyPinValue($data['confirm_new_pin'])) {
+      ResponseHelper::error('incomplete pin data', 404);
+      return;
     }
-    if ($data['new_pin'] != $data['confirm_new_pin']) {
+
+    $storedPin = $userData->lock_pin ?? null;
+    if (empty($storedPin) || $storedPin == "0") {
+      ResponseHelper::error('Lock pin not set', 404);
+      return;
+    }
+    if ((string) $data['new_pin'] !== (string) $data['confirm_new_pin']) {
       ResponseHelper::error('pin does not match', 404);
+      return;
     }
-    if (password_verify($data['old_pin'], $userData->transfer_pin)) {
-      $data['new_pin'] = password_hash($data['new_pin'], PASSWORD_DEFAULT);
-      if ($this->userModel->setTransferPin($data['new_pin'], $user_id)) {
-        ResponseHelper::success('transfer pin set successfully');
+    if (password_verify((string) $data['old_pin'], (string) $storedPin)) {
+      $newPinHash = password_hash((string) $data['new_pin'], PASSWORD_DEFAULT);
+      if ($this->userModel->setLockPin($newPinHash, $user_id)) {
+        ResponseHelper::success('lock pin set successfully');
       } else {
-        ResponseHelper::error('failed to set transfer pin', 404);
+        ResponseHelper::error('failed to set lock pin', 404);
       }
     } else {
       ResponseHelper::error('wrong pin', 404);
@@ -916,49 +930,44 @@ class Users extends Controller
 
   public function resetTransferPin()
   {
-
     try {
-      $userData = $this->RouteProtecion();
-    } catch (UnexpectedValueException $e) {
+      $userData = $this->requirePinUser();
     } catch (UnexpectedValueException $e) {
       ResponseHelper::error($e->getMessage(), 401);
-    }
+      return;
     }
 
     $user_id = $userData->user_id;
-
     $sentData = $this->getData();
 
-
     $data = [
-      'otp' => $sentData['otp'],
-      'transfer_pin' => $sentData['transfer_pin'],
-      'confirm_transfer_pin' => $sentData['confirm_transfer_pin'],
+      'otp' => $sentData['otp'] ?? null,
+      'transfer_pin' => $sentData['transfer_pin'] ?? null,
+      'confirm_transfer_pin' => $sentData['confirm_transfer_pin'] ?? null,
     ];
 
-    foreach ($sentData as $key => $value) {
-
-      if (!isset($key) && is_string($value) && $value === "") {
-        ResponseHelper::error("Incomplete params: " . $key . " is required.", 404);
+    foreach ($data as $key => $value) {
+      if (!$this->hasNonEmptyPinValue($value)) {
+        ResponseHelper::error("Incomplete params: {$key} is required.", 404);
+        return;
       }
     }
 
-    if ($data['confirm_transfer_pin'] != $data['transfer_pin']) {
+    if ((string) $data['confirm_transfer_pin'] !== (string) $data['transfer_pin']) {
       ResponseHelper::error('password do not match', 404);
+      return;
     }
 
-
-    $hash_otp = $userData->password_reset_token;
-    if (password_verify($data['otp'], $hash_otp)) {
-      $pinn = password_hash($data['transfer_pin'], PASSWORD_DEFAULT);
-      $data['user_id'] = $user_id;
-      $data['email'] = $userData->email;
-
+    $hash_otp = $userData->password_reset_token ?? null;
+    if ($hash_otp !== null && password_verify((string) $data['otp'], (string) $hash_otp)) {
+      $pinn = password_hash((string) $data['transfer_pin'], PASSWORD_DEFAULT);
       if ($this->userModel->setTransferPin($pinn, $user_id)) {
         ResponseHelper::success('transfer pin set successfully');
       } else {
         ResponseHelper::error('failed to set transfer pin', 404);
       }
+    } else {
+      ResponseHelper::error('invalid or expired otp', 404);
     }
   }
 

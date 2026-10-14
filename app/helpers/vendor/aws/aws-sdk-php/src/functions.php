@@ -1,8 +1,10 @@
 <?php
 namespace Aws;
 
+use GuzzleHttp\Psr7\FnStream;
 use GuzzleHttp\Utils;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamInterface;
 use GuzzleHttp\Promise\FulfilledPromise;
 
 //-----------------------------------------------------------------------------
@@ -268,11 +270,17 @@ function describe_type($input)
 /**
  * Creates a default HTTP handler based on the available clients.
  *
+ * @param string|null $transportSharing Optional transport sharing mode
+ *        ("none", "handler_prefer", "handler_require", "persistent_prefer",
+ *        or "persistent_require") to apply to the underlying HTTP client.
+ *        The "*_prefer" modes degrade gracefully when the installed version
+ *        of Guzzle cannot honor them, and the "*_require" modes throw.
+ *
  * @return callable
  */
-function default_http_handler()
+function default_http_handler(?string $transportSharing = null)
 {
-    return new \Aws\Handler\Guzzle\GuzzleHandler();
+    return new \Aws\Handler\Guzzle\GuzzleHandler(null, $transportSharing);
 }
 
 /**
@@ -564,10 +572,22 @@ function is_associative(array $array): bool
         return false;
     }
 
-    if (function_exists('array_is_list')) {
-        return !array_is_list($array);
-    }
-
-    return array_keys($array) !== range(0, count($array) - 1);
+    return !array_is_list($array);
 }
 
+/**
+ * Decorates a PSR-7 stream so close() detaches the underlying resource
+ * instead of fclose()-ing it. Use at sites where the SDK wraps a
+ * user-owned PHP resource.
+ *
+ * @param StreamInterface $stream
+ * @return StreamInterface
+ */
+function detach_on_close_stream(StreamInterface $stream): StreamInterface
+{
+    return FnStream::decorate($stream, [
+        'close' => static function () use ($stream) {
+            $stream->detach();
+        },
+    ]);
+}

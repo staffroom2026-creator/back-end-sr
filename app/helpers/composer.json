@@ -1,5 +1,10 @@
 {
     "require": {
         "aws/aws-sdk-php": "^3.352"
+    },
+    "config": {
+        "platform": {
+            "php": "8.3.0"
+        }
     }
 }

@@ -56,7 +56,10 @@ class AuthMiddleware
 
         // 3. Validate JWT token using JWT_SECRET and decode payload
         try {
-            $secretKey = defined('JWT_SECRET_KEY') ? JWT_SECRET_KEY : (function_exists('env') ? env('JWT_SECRET', 'staffroom_secret_key_2026_secure_mvc') : 'staffroom_secret_key_2026_secure_mvc');
+            $secretKey = defined('JWT_SECRET_KEY') ? JWT_SECRET_KEY : (function_exists('env') ? env('JWT_SECRET') : null);
+            if (!is_string($secretKey) || trim($secretKey) === '') {
+                Response::error('Authentication service unavailable', 500);
+            }
             $decoded = JWT::decode($token, $secretKey, true);
 
             if (!$decoded || !isset($decoded->user_id) || isset($decoded->purpose)) {
